@@ -4,9 +4,7 @@ import 'express-async-errors'
 import connectDB from './db/connect';
 import authRouter from './routes/auth';
 import userRouter from './routes/user'
-import bookRouter from './routes/books'
 import paymentRouter from './routes/transaction'
-import commentRouter from './routes/comments'
 import notFound from './middleware/not-found';
 import errorHandlerMiddleware from './middleware/error-handler';
 import session from "express-session";
@@ -18,7 +16,7 @@ const app = express();
 app.use(express.json())
 
 app.get('/', (req: Request, res: Response) => {
-  res.send('Hello, Welcome to my bookstore!');
+  res.send('Building Bankit Interview Test');
 });
 
 app.use(
@@ -33,8 +31,6 @@ app.use(passport.session());
 
 
 app.use('/api/v1/auth', authRouter)
-app.use('/api/v1/book', bookRouter)
-app.use('/api/v1/comment', commentRouter)
 app.use('/api/v1/payment', paymentRouter)
 app.use('/api/v1/user', userRouter)
 

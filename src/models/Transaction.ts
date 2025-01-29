@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 interface ITransaction extends Document {
     userId: mongoose.Types.ObjectId;
     amount: number; 
+    accountNumber: number;
+    bankId:number;
     reference: string; 
     status: "pending" | "success" | "failed"; 
     createdAt: Date;
@@ -19,6 +21,14 @@ const TransactionSchema: Schema<ITransaction> = new Schema(
         amount: {
             type: Number,
             required: true,
+        },
+        accountNumber: {
+            type: Number,
+            required: true,
+        },
+        bankId:{
+            type:Number,
+            required:true,
         },
         reference: {
             type: String,

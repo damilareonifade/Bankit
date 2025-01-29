@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../@types/express";
 import User from "../models/User";
+import mongoose from "mongoose";
 import Transaction from "../models/Transaction";
 
 
@@ -11,62 +12,93 @@ dotenv.config();
 
 
 const initializePayment = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    const session = await mongoose.startSession(); // Start a DB session
+    session.startTransaction(); // Begin transaction
+
     try {
-        const { userId } = req.user || {};
-        const { amount } = req.body; // Amount in kobo (Naira * 100)
+        const { userId, amount, accountNumber, bankCode } = req.body;
 
-        if (!amount || amount <= 0) {
-            res.status(400).json({ message: "Invalid amount." });
-            return;
+        // ✅ Input validation
+        if (!userId || !amount || amount <= 0 || !accountNumber || !bankCode) {
+            throw new Error("Invalid input. Please provide userId, valid amount, accountNumber, and bankCode.");
         }
 
-        const user = await User.findById(userId);
+        // Fetch user (inside transaction)
+        const user = await User.findById(userId).session(session);
         if (!user) {
-            res.status(404).json({ message: "User not found." });
-            return;
+            throw new Error("User not found.");
         }
 
+        // Generate unique transaction reference
         const reference = uuidv4();
 
+        // ✅ Prevent duplicate transactions
+        const existingTransaction = await Transaction.findOne({ reference, status: "pending" }).session(session);
+        if (existingTransaction) {
+            throw new Error("Duplicate transaction detected.");
+        }
 
+        // Create a new transaction record (Pending) inside transaction
         const transaction = new Transaction({
             userId: user._id,
-            amount: amount / 100,
+            amount,
             reference,
             status: "pending",
+            type: "transfer",
+            recipient: accountNumber,
         });
-        await transaction.save();
+        await transaction.save({ session });
 
-
-
+        // ✅ Call Paystack API for fund transfer
         const paystackResponse = await axios.post(
-            "https://api.paystack.co/transaction/initialize",
+            "https://api.paystack.co/transfer",
             {
-                email: user.email,
+                source: "balance",
                 amount,
                 reference,
+                recipient: {
+                    type: "nuban",
+                    name: `${user.first_name} ${user.last_name}`,
+                    account_number: accountNumber,
+                    bank_code: bankCode,
+                    currency: "NGN",
+                },
             },
             {
                 headers: {
                     Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                    "Content-Type": "application/json",
                 },
             }
         );
 
+        // Extract response data
         const { status, data } = paystackResponse.data;
-
         if (!status) {
-            res.status(400).json({ message: "Payment initialization failed." });
-            return;
+            throw new Error("Funds transfer failed.");
         }
 
+        //  Update transaction status to "successful" inside transaction
+        transaction.status = "success";
+        await transaction.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
         res.status(200).json({
-            message: "Payment initialized successfully.",
-            authorization_url: data.authorization_url,
-            reference: data.reference,
+            message: "Funds transfer successful.",
+            transfer_details: data,
+            reference,
         });
-    } catch (error) {
-        next(error);
+
+    } catch (error: any) {
+        // Rollback the transaction in case of failure
+        await session.abortTransaction();
+        session.endSession();
+
+        console.error("Funds Transfer Error:", error.message);
+        res.status(500).json({ message: error.message || "Internal Server Error" });
     }
 };
 
