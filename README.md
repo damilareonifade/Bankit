@@ -26,3 +26,13 @@ Answer: Secure Login with JWT Tokens: Implement a login system where the server 
 
 4. How would you handle concurrent transactions to prevent double spending or data inconsistencies?
 Answer: Handling Concurrent Transactions: Use database locks or optimistic concurrency control to prevent double spending or inconsistencies
+
+# 2. 2. Optimize the following SQL query for a microfinance bank's customer records:
+SELECT * FROM transactions WHERE customer_id = '12345' ORDER BY date
+DESC;
+Answer: By adding limiting the number of result to be giving on the first query we make the application faster and the database query better, and I also ensure we are getting the values we need such as transaction_id,amount,type,date,status.
+SELECT transaction_id, amount, type, date 
+FROM transactions 
+WHERE customer_id = '12345' 
+ORDER BY date DESC 
+LIMIT 50 OFFSET 0;
