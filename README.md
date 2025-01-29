@@ -18,8 +18,9 @@ Answer:  Risks include data breaches, identity theft, and financial fraud. Mitig
 1. Explain the importance of ACID properties in financial applications and how they apply to databases.
 Answer: ACID(Atomicity, Consistency, Isolation, Durability) ensures reliable and accurate transactions. Atomicity guarantees all parts of a transaction succeed or fail together, Consistency maintains data integrity, Isolation prevents interference between concurrent transactions, and Durability ensures committed transactions persist even after system failures. These properties are critical for maintaining trust and accuracy in financial systems.
 
-2.What is the role of encryption in securing bank transactions?
+2. What is the role of encryption in securing bank transactions?
 Answer:  Role of Encryption: Encryption secures bank transactions by converting sensitive data (e.g., account details, transaction amounts) into unreadable formats during transmission and storage. This prevents unauthorized access, tampering, or interception, ensuring confidentiality and integrity.
+
 3. Describe how you would implement a secure login system using JWT tokens?
 Answer: Secure Login with JWT Tokens: Implement a login system where the server generates a JWT (JSON Web Token) upon successful authentication. The token, signed with a secret key, contains user claims (e.g., roles, expiration). Store the token securely (e.g., HTTP-only cookies) and validate it on each request to ensure authenticity and prevent unauthorized access.
 
